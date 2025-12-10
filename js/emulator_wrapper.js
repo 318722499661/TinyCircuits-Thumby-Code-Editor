@@ -426,17 +426,6 @@ export class EMULATOR{
     // Setup key press and un-press on first emulator start (maybe these should only work when the emulator has focus?)
     document.addEventListener('keydown', this.handleKeyDown);
     document.addEventListener('keyup', this.handleKeyUp);
-
-    // Init audio
-    this.AUDIO_CONTEXT = new(window.AudioContext || window.webkitAudioContext)();
-    this.AUDIO_VOLUME = this.AUDIO_CONTEXT.createGain();
-    this.AUDIO_VOLUME.connect(this.AUDIO_CONTEXT.destination);
-    this.AUDIO_VOLUME.gain.value = 0.25;
-    this.AUDIO_BUZZER = this.AUDIO_CONTEXT.createOscillator();
-    this.AUDIO_BUZZER.frequency.value = 0;
-    this.AUDIO_BUZZER.type = "triangle";
-    this.AUDIO_BUZZER.start();
-    this.AUDIO_BUZZER.connect(this.AUDIO_VOLUME);
   }
 
 
@@ -863,7 +852,8 @@ export class EMULATOR{
       this.cdc = undefined;
       this.littlefsHelper = undefined;
 
-      if (this.AUDIO_BUZZER != undefined) this.AUDIO_BUZZER.stop();
+      // Set to zero instead of stopping buzzer (this way start() doesn't need to be called again)
+      if (this.AUDIO_BUZZER != undefined) this.AUDIO_BUZZER.frequency.value = 0;
 
       this.EMULATOR_CANVAS.style.display = "none";
     }
@@ -902,6 +892,19 @@ export class EMULATOR{
     // Reset these so FPS is calculated correctly next time
     this.resetFPS();
 
+    // Init audio, needs tp be here behind a user gesture (button press)
+    if(this.AUDIO_CONTEXT == undefined){
+      this.AUDIO_CONTEXT = new(window.AudioContext || window.webkitAudioContext)();
+      this.AUDIO_VOLUME = this.AUDIO_CONTEXT.createGain();
+      this.AUDIO_VOLUME.connect(this.AUDIO_CONTEXT.destination);
+      this.AUDIO_VOLUME.gain.value = 0.25;
+      this.AUDIO_BUZZER = this.AUDIO_CONTEXT.createOscillator();
+      this.AUDIO_BUZZER.frequency.value = 0;
+      this.AUDIO_BUZZER.type = "triangle";
+      this.AUDIO_BUZZER.start();
+      this.AUDIO_BUZZER.connect(this.AUDIO_VOLUME);
+    }
+
     if(this.mcu == undefined){
       // These all need reset or subsequent runs will start at the wrong places
       this.displayBufferAdr = undefined;
@@ -927,7 +930,7 @@ export class EMULATOR{
       }
       this.mcu.onAudioFreq = (freq) => {
         freq = freq + 0.0001;
-        this.AUDIO_BUZZER.frequency.exponentialRampToValueAtTime(freq, this.AUDIO_CONTEXT.currentTime + 0.03);
+        this.AUDIO_BUZZER.frequency.exponentialRampToValueAtTime(freq, this.AUDIO_CONTEXT.currentTime + 0.01);
       }
       this.mcu.onBrightness = (brightness) => {
         this.setBrightness(brightness);
@@ -979,22 +982,22 @@ export class EMULATOR{
 
       if(window.setPercent) window.setPercent(50);
 
-      await this.loadServerFile("ThumbyGames/lib-emulator/thumby.py", '/lib/thumby.py');
-      await this.loadServerFile("ThumbyGames/lib-emulator/ssd1306.py", '/lib/ssd1306.py');
+      await this.loadServerFile("CoreThumbyFiles/lib/thumby.py", '/lib/thumby.py');
+      await this.loadServerFile("CoreThumbyFiles/lib/ssd1306.py", '/lib/ssd1306.py');
 
-      await this.loadServerFile("ThumbyGames/lib-emulator/thumbyAudio.py", "/lib/thumbyAudio.py");
-      await this.loadServerFile("ThumbyGames/lib-emulator/thumbyButton.py", "/lib/thumbyButton.py");
-      await this.loadServerFile("ThumbyGames/lib-emulator/thumbyGraphics.py", "/lib/thumbyGraphics.py");
-      await this.loadServerFile("ThumbyGames/lib-emulator/thumbyHardware.py", "/lib/thumbyHardware.py");
-      await this.loadServerFile("ThumbyGames/lib-emulator/thumbyLink.py", "/lib/thumbyLink.py");
-      await this.loadServerFile("ThumbyGames/lib-emulator/thumbySaves.py", "/lib/thumbySaves.py");
-      await this.loadServerFile("ThumbyGames/lib-emulator/thumbySprite.py", "/lib/thumbySprite.py");
+      await this.loadServerFile("CoreThumbyFiles/lib/thumbyAudio.py", "/lib/thumbyAudio.py");
+      await this.loadServerFile("CoreThumbyFiles/lib/thumbyButton.py", "/lib/thumbyButton.py");
+      await this.loadServerFile("CoreThumbyFiles/lib/thumbyGraphics.py", "/lib/thumbyGraphics.py");
+      await this.loadServerFile("CoreThumbyFiles/lib/thumbyHardware.py", "/lib/thumbyHardware.py");
+      await this.loadServerFile("CoreThumbyFiles/lib/thumbyLink.py", "/lib/thumbyLink.py");
+      await this.loadServerFile("CoreThumbyFiles/lib/thumbySaves.py", "/lib/thumbySaves.py");
+      await this.loadServerFile("CoreThumbyFiles/lib/thumbySprite.py", "/lib/thumbySprite.py");
 
-      await this.loadServerFile("ThumbyGames/lib-emulator/font3x5.bin", '/lib/font3x5.bin');
-      await this.loadServerFile("ThumbyGames/lib-emulator/font5x7.bin", '/lib/font5x7.bin');
-      await this.loadServerFile("ThumbyGames/lib-emulator/font8x8.bin", '/lib/font8x8.bin');
-      await this.loadServerFile("ThumbyGames/lib-emulator/TClogo.bin", '/lib/TClogo.bin');
-      await this.loadServerFile("ThumbyGames/lib-emulator/thumbyLogo.bin", '/lib/thumbyLogo.bin');
+      await this.loadServerFile("CoreThumbyFiles/lib/font3x5.bin", '/lib/font3x5.bin');
+      await this.loadServerFile("CoreThumbyFiles/lib/font5x7.bin", '/lib/font5x7.bin');
+      await this.loadServerFile("CoreThumbyFiles/lib/font8x8.bin", '/lib/font8x8.bin');
+      await this.loadServerFile("CoreThumbyFiles/lib/TClogo.bin", '/lib/TClogo.bin');
+      await this.loadServerFile("CoreThumbyFiles/lib/thumbyLogo.bin", '/lib/thumbyLogo.bin');
       
       if(window.setPercent) window.setPercent(75);
 
